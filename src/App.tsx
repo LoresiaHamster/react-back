@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import axios from 'axios';
+import axios, { AxiosError, CanceledError } from 'axios';
 import ProductList from './components/ProductList';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.css';
@@ -14,17 +14,45 @@ interface User {
 
 function App() {
   const [category, setCategory] = useState('');
-
   const [users, setUsers] = useState<User[]>([]);
-
   const [error, setError] = useState('');
 
+  const [isLoading, setLoading] = useState(false);
+
   useEffect(() => {
+    // get -> promise -> response / error
+    const controller = new AbortController();
+
+    setLoading(true);
     axios
-      .get<User[]>('https://jsonplaceholder.typicode.com/xusers')
-      .then((res) => setUsers(res.data))
-      .catch((err) => setError(err.message));
+      .get<User[]>('https://jsonplaceholder.typicode.com/users', {
+        signal: controller.signal,
+      })
+      .then((res) => {
+        setUsers(res.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (err instanceof CanceledError) return;
+        setError(err.message);
+        setLoading(false);
+      });
+    return () => controller.abort();
   }, []);
+
+  // useEffect(() => {
+  //   const fetchUsers = async () => {
+  //     try {
+  //       const res = await axios.get<User[]>(
+  //         'https://jsonplaceholder.typicode.com/xusers'
+  //       );
+  //       setUsers(res.data);
+  //     } catch (err) {
+  //       setError((err as AxiosError).message);
+  //     }
+  //   };
+  //   fetchUsers();
+  // }, []);
 
   // useEffect(() => {
   //   connect();
@@ -43,6 +71,7 @@ function App() {
       </select>
       {/* <ProductList category={category} /> */}
       <br />
+      {isLoading && <div className='spinner-border'></div>}
       <ul>
         {users.map((user) => (
           <li key={user.id}>{user.name}</li>
