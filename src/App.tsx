@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import axios, { AxiosError, CanceledError } from 'axios';
 import ProductList from './components/ProductList';
+import apiClient, { CanceledError } from './services/api-client';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.css';
 
@@ -24,8 +24,8 @@ function App() {
     const controller = new AbortController();
 
     setLoading(true);
-    axios
-      .get<User[]>('https://jsonplaceholder.typicode.com/users', {
+    apiClient
+      .get<User[]>('/users/', {
         signal: controller.signal,
       })
       .then((res) => {
@@ -62,20 +62,18 @@ function App() {
   const deleteUser = (user: User) => {
     const origianlUsers = [...users];
     setUsers(users.filter((u) => u.id != user.id));
-    axios
-      .delete('https://jsonplaceholder.typicode.com/users/' + user.id)
-      .catch((err) => {
-        setError(err.message);
-        setUsers(origianlUsers);
-      });
+    apiClient.delete('/users/' + user.id).catch((err) => {
+      setError(err.message);
+      setUsers(origianlUsers);
+    });
   };
 
   const addUser = () => {
     const origianlUsers = [...users];
     const newUser = { id: 0, name: 'Mosh' };
     setUsers([newUser, ...users]);
-    axios
-      .post('https://jsonplaceholder.typicode.com/users/', newUser)
+    apiClient
+      .post('/users/', newUser)
       .then(({ data: savedUser }) => setUsers([savedUser, ...users]))
       .catch((err) => {
         setError(err.message);
@@ -87,15 +85,10 @@ function App() {
     const origianlUsers = [...users];
     const updatedUser = { ...user, name: user.name + '!' };
     setUsers(users.map((u) => (u.id === user.id ? updatedUser : u)));
-    axios
-      .patch(
-        'https://jsonplaceholder.typicode.com/users/' + user.id,
-        updatedUser
-      )
-      .catch((err) => {
-        setError(err.message);
-        setUsers(origianlUsers);
-      });
+    apiClient.patch('/users/' + user.id, updatedUser).catch((err) => {
+      setError(err.message);
+      setUsers(origianlUsers);
+    });
   };
 
   return (
