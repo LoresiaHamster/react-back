@@ -4,53 +4,13 @@ import { CanceledError } from './services/api-client';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.css';
 import userService, { User } from './services/user-service';
+import useUsers from './hooks/useUsers';
 
 const connect = () => console.log('Connecting');
 const disconnect = () => console.log('Disconnecting');
 
 function App() {
-  const [category, setCategory] = useState('');
-  const [users, setUsers] = useState<User[]>([]);
-  const [error, setError] = useState('');
-
-  const [isLoading, setLoading] = useState(false);
-
-  useEffect(() => {
-    // get -> promise -> response / error
-
-    setLoading(true);
-    const { request, cancel } = userService.getAll<User>();
-    request
-      .then((res) => {
-        setUsers(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        if (err instanceof CanceledError) return;
-        setError(err.message);
-        setLoading(false);
-      });
-    return () => cancel();
-  }, []);
-
-  // useEffect(() => {
-  //   const fetchUsers = async () => {
-  //     try {
-  //       const res = await axios.get<User[]>(
-  //         'https://jsonplaceholder.typicode.com/xusers'
-  //       );
-  //       setUsers(res.data);
-  //     } catch (err) {
-  //       setError((err as AxiosError).message);
-  //     }
-  //   };
-  //   fetchUsers();
-  // }, []);
-
-  // useEffect(() => {
-  //   connect();
-  //   return () => disconnect();
-  // });
+  const { users, error, isLoading, setUsers, setError } = useUsers();
 
   const deleteUser = (user: User) => {
     const origianlUsers = [...users];
@@ -86,16 +46,6 @@ function App() {
 
   return (
     <div>
-      <select
-        className='form-select'
-        onChange={(event) => setCategory(event.target.value)}
-      >
-        <option value=''></option>
-        <option value='Clothing'>Clothing</option>
-        <option value='Household'>Household</option>
-      </select>
-      {/* <ProductList category={category} /> */}
-      <br />
       {isLoading && <div className='spinner-border'></div>}
 
       <button className='btn btn-primary mb-3' onClick={addUser}>
