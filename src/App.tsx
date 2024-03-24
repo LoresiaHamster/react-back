@@ -1,16 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import ProductList from './components/ProductList';
-import apiClient, { CanceledError } from './services/api-client';
+import { CanceledError } from './services/api-client';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.css';
+import userService, { User } from './services/user-service';
 
 const connect = () => console.log('Connecting');
 const disconnect = () => console.log('Disconnecting');
-
-interface User {
-  id: number;
-  name: string;
-}
 
 function App() {
   const [category, setCategory] = useState('');
@@ -21,13 +17,10 @@ function App() {
 
   useEffect(() => {
     // get -> promise -> response / error
-    const controller = new AbortController();
 
     setLoading(true);
-    apiClient
-      .get<User[]>('/users/', {
-        signal: controller.signal,
-      })
+    const { request, cancel } = userService.getAllUsers();
+    request
       .then((res) => {
         setUsers(res.data);
         setLoading(false);
@@ -37,7 +30,7 @@ function App() {
         setError(err.message);
         setLoading(false);
       });
-    return () => controller.abort();
+    return () => cancel();
   }, []);
 
   // useEffect(() => {
@@ -62,7 +55,7 @@ function App() {
   const deleteUser = (user: User) => {
     const origianlUsers = [...users];
     setUsers(users.filter((u) => u.id != user.id));
-    apiClient.delete('/users/' + user.id).catch((err) => {
+    userService.deleteUser(user.id).catch((err) => {
       setError(err.message);
       setUsers(origianlUsers);
     });
@@ -72,8 +65,8 @@ function App() {
     const origianlUsers = [...users];
     const newUser = { id: 0, name: 'Mosh' };
     setUsers([newUser, ...users]);
-    apiClient
-      .post('/users/', newUser)
+    userService
+      .createUser(newUser)
       .then(({ data: savedUser }) => setUsers([savedUser, ...users]))
       .catch((err) => {
         setError(err.message);
@@ -85,7 +78,7 @@ function App() {
     const origianlUsers = [...users];
     const updatedUser = { ...user, name: user.name + '!' };
     setUsers(users.map((u) => (u.id === user.id ? updatedUser : u)));
-    apiClient.patch('/users/' + user.id, updatedUser).catch((err) => {
+    userService.updateUser(updatedUser).catch((err) => {
       setError(err.message);
       setUsers(origianlUsers);
     });
